@@ -255,8 +255,8 @@ RMSE_train &lt;- runif(n=7)
 RMSE_test &lt;- runif(n=7)
 
 # Do your work here:
-n_train &lt;- 20
-n_test &lt;- 380
+n_train &lt;- nrow(credit_train)
+n_test &lt;- nrow(credit_test)
 
 models &lt;- c(model1_formula, model2_formula, model3_formula, model4_formula, model5_formula, model6_formula, model7_formula)
 

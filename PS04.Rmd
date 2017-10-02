@@ -68,8 +68,8 @@ RMSE_train <- runif(n=7)
 RMSE_test <- runif(n=7)
 
 # Do your work here:
-n_train <- 20
-n_test <- 380
+n_train <- nrow(credit_train)
+n_test <- nrow(credit_test)
 
 models <- c(model1_formula, model2_formula, model3_formula, model4_formula, model5_formula, model6_formula, model7_formula)
 
