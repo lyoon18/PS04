@@ -1,6 +1,6 @@
 ---
 title: "STAT/MATH 495: Problem Set 04"
-author: "WRITE YOUR NAME HERE"
+author: "Leonard Yoon"
 date: "2017-10-03"
 output:
   html_document:
@@ -9,6 +9,7 @@ output:
     toc_depth: 2
     collapsed: false
     smooth_scroll: false
+    df_print: kable
 ---
 
 ```{r setup, include=FALSE}
@@ -18,13 +19,17 @@ set.seed(76)
 
 # Collaboration
 
-Please indicate who you collaborated with on this assignment:
+Please indicate who you collaborated with on this assignment: Meron, Tim
 
 
 # Load packages, data, model formulas
 
-```{r, warning=FALSE}
+```{r, include=FALSE, warning=FALSE}
 library(tidyverse)
+library(broom)
+```
+
+```{r, warning=FALSE}
 credit <- read_csv("http://www-bcf.usc.edu/~gareth/ISL/Credit.csv") %>%
   select(-X1) %>%
   mutate(ID = 1:n()) %>% 
@@ -62,9 +67,97 @@ credit_test <- credit %>%
 RMSE_train <- runif(n=7)
 RMSE_test <- runif(n=7)
 
-
 # Do your work here:
+n_train <- 20
+n_test <- 380
 
+models <- c(model1_formula, model2_formula, model3_formula, model4_formula, model5_formula, model6_formula, model7_formula)
+
+for(i in 1:length(models)) {
+  model <- lm(models[[i]], data = credit_train)
+  pred_train <- model %>%
+    augment(newdata=credit_train)
+  pred_test <- model %>% 
+    augment(newdata=credit_test)
+  MSE_te <- (1/n_test)*sum((pred_test$Balance-pred_test$.fitted)^2) # mean squared error
+  RMSE_te <- sqrt(MSE_te) # root mean squared error
+  RMSE_test[i] <- RMSE_te # fill in the vector
+  MSE_tr <- (1/n_train)*sum((pred_train$Balance-pred_train$.fitted)^2) # mean squared error
+  RMSE_tr <- sqrt(MSE_tr) # root mean squared error
+  RMSE_train[i] <- RMSE_tr # fill in the vector
+}
+```
+
+```{r, include=FALSE, warning=FALSE, message=FALSE}
+# Save results in a data frame. Note this data frame is in wide format.
+results <- data_frame(
+  num_coefficients = 1:7,
+  RMSE_train,
+  RMSE_test
+) 
+
+# Some cleaning of results
+results <- results %>% 
+  # More intuitive names:
+  rename(
+    `Training data` = RMSE_train,
+    `Test data` = RMSE_test
+  ) %>% 
+  # Convert results data frame to "tidy" data format i.e. long format, so that we
+  # can ggplot it
+  gather(type, RMSE, -num_coefficients)
+```
+
+Next, I save my results in a data frame (called `results`) and clean that data frame before plotting.
+
+```{r, echo=TRUE, warning=FALSE, message=FALSE}
+ggplot(results, aes(x=num_coefficients, y=RMSE, col=type)) +
+  geom_line() + 
+  labs(x="# of coefficients", y="RMSE", col="Data used to evaluate \nperformance of fitted model")
+```
+
+
+# Interpret the graph
+
+Compare and contrast the two curves and hypothesize as to the root cause of any differences.
+
+ANSWER: For both curves, the RMSE drops drastically from 2 coefficients to 3 coefficients. However, we see an increase after 4 coefficients for the test data and a decrease after 4 coefficients for the training data.   
+For the training data, adding coefficients continues to decrease the RMSE because at a certain point, you start fitting to noise instead of just signal. We reduce our RMSE by doing this because we can reduce the distance of our curve from each point, but our curve doesn't have any predictive value anymore (i.e. if we connected all the dots together to be our model, we wouldn't have a good model but would have RMSE = 0). However, when we fit the model from the training data on our test data, we have the same signal but different noise and thus adding unnecessary coefficients will lead to overfitting and increase the RMSE. This is why we don't want to make a prediction and then test the prediction using the same set of information.
+
+# Bonus
+
+Repeat the whole process, but let `credit_train` be a random sample of size 380
+from `credit` instead of 20. Now compare and contrast this graph with the
+one above and hypothesize as to the root cause of any differences.
+
+```{r, echo=FALSE,warning=FALSE, message=FALSE}
+set.seed(79)
+credit_test <- credit %>% 
+  sample_n(20)
+credit_train <- credit %>% 
+  anti_join(credit_train, by="ID")
+
+RMSE_train <- runif(n=7)
+RMSE_test <- runif(n=7)
+
+n_train <- nrow(credit_train)
+n_test <- nrow(credit_test)
+
+models <- c(model1_formula, model2_formula, model3_formula, model4_formula, model5_formula, model6_formula, model7_formula)
+
+for(i in 1:length(models)) {
+  model <- lm(models[[i]], data = credit_train)
+  pred_train <- model %>%
+    augment(newdata=credit_train)
+  pred_test <- model %>% 
+    augment(newdata=credit_test)
+  MSE_te <- (1/n_test)*sum((pred_test$Balance-pred_test$.fitted)^2) # mean squared error
+  RMSE_te <- sqrt(MSE_te) # root mean squared error
+  RMSE_test[i] <- RMSE_te # fill in the vector
+  MSE_tr <- (1/n_train)*sum((pred_train$Balance-pred_train$.fitted)^2) # mean squared error
+  RMSE_tr <- sqrt(MSE_tr) # root mean squared error
+  RMSE_train[i] <- RMSE_tr # fill in the vector
+}
 
 # Save results in a data frame. Note this data frame is in wide format.
 results <- data_frame(
@@ -90,18 +183,5 @@ ggplot(results, aes(x=num_coefficients, y=RMSE, col=type)) +
 ```
 
 
-# Interpret the graph
-
-Compare and contrast the two curves and hypothesize as to the root cause of any differences.
-
-
-
-# Bonus
-
-Repeat the whole process, but let `credit_train` be a random sample of size 380
-from `credit` instead of 20. Now compare and contrast this graph with the
-one above and hypothesize as to the root cause of any differences.
-
-```{r, echo=FALSE}
-
-```
+ANSWER: Like the previous graph, this one has a steep decrease in RMSE as coefficients are added up through 3 coefficients. At that point, though, the RMSE basically stays the same in both the training data and test data regardless of how many more coefficients are added.   
+I predict that with the higher sample size on the training data, the noise has gone down significantly and now the signal to noise ratio is higher. Thus, adding more coefficients to the model and fitting to the training data doesn't decrease the RMSE very much because there isn't much noise to be fit. However, we now have more noise in the test data because its sample size has gone down drastically. So if we then use the signal from the training data on the test data, we won't necessarily get a better fit (i.e. our RMSE for the test data on the main assignment is lower at 3 coefficients than it is here). Adding more coefficients should cause the RMSE on the test data to increase, but in the plot we barely see an uptick for 3+ coefficients. So in this way my plot isn't necessarily doing what I would expect.
