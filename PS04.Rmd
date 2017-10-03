@@ -131,9 +131,10 @@ one above and hypothesize as to the root cause of any differences.
 
 ```{r, echo=FALSE,warning=FALSE, message=FALSE}
 set.seed(79)
-credit_test <- credit %>% 
-  sample_n(20)
+
 credit_train <- credit %>% 
+  sample_n(380)
+credit_test <- credit %>% 
   anti_join(credit_train, by="ID")
 
 RMSE_train <- runif(n=7)
@@ -182,5 +183,5 @@ ggplot(results, aes(x=num_coefficients, y=RMSE, col=type)) +
 ```
 
 
-ANSWER: Like the previous graph, this one has a steep decrease in RMSE as coefficients are added up through 3 coefficients. At that point, though, the RMSE basically stays the same in both the training data and test data regardless of how many more coefficients are added.   
-I predict that with the higher sample size on the training data, the noise has gone down significantly and now the signal to noise ratio is higher. Thus, adding more coefficients to the model and fitting to the training data doesn't decrease the RMSE very much because there isn't much noise to be fit. However, we now have more noise in the test data because its sample size has gone down drastically. So if we then use the signal from the training data on the test data, we won't necessarily get a better fit (i.e. our RMSE for the test data on the main assignment is lower at 3 coefficients than it is here). Adding more coefficients should cause the RMSE on the test data to increase, but in the plot we barely see an uptick for 3+ coefficients. So in this way my plot isn't necessarily doing what I would expect.
+ANSWER: Like the previous graph for training data, this one has a steep decrease in RMSE as coefficients are added up through 3 coefficients. At that point, though, the RMSE barely decreases as more coefficients are added. For the test data, there is a similar steep decrease like in the previous graph of test data except the RMSE is minimized for 4 coefficients instead of for 3 coefficients. Then, the RMSE increases slightly as coefficients are added.   
+I predict that with the higher sample size on the training data, the noise has gone down significantly and now the signal to noise ratio is higher. Thus, adding more coefficients to the model and fitting to the training data doesn't decrease the RMSE very much because there isn't much noise to be fit. When we fit this stronger signal to the test data, we should get a better fit (i.e. our RMSE for the test data on the main assignment is higher at 3 coefficients than it is here). The stronger signal from the training data also allows for the test data to reach a different conclusion regarding number of coefficients that should be used in the model. Whereas before 3 and 4 coefficients have very similar errors in the test data, now there is a noticeable decrease with 4 coefficients which suggests that the stronger signal can pick up finer nuances in the test data.
